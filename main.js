@@ -1,9 +1,8 @@
+
 const { Client, MessageActionRow, MessageButton, MessageEmbed, Intents } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_TYPING] });
-const botToken = 'MTE5NDE4NjgxNzcwMDg5Njg0OA.GW3vAf.pveirDUcAPYfYn2b2Pe1Xc1ipQEscN6T0XZ_y0';
-const autosend = require("discord-autosender")
-//const channelId = '1194190109478756352';
-
+const autosend = require("discord-autosender");
+const botToken = process.env.botToken;
 let streams = [];
 
 client.on('ready', () => {
