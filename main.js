@@ -41,7 +41,7 @@ client.on('interactionCreate', async (interaction) => {
         const embed = new MessageEmbed()
             .setColor('#0099ff')
             .setTitle('Введите данные')
-            .setDescription('Введите данные в следующем формате:\n/addstream token={token} channelId={channelId} messageText={messageText} intervalInMinutes={intervalInMinutes}');
+            .setDescription('Введите данные в следующем формате:\n/addstream&token={token}&channelId={channelId}&messageText={messageText}&intervalInMinutes={intervalInMinutes}');
         await interaction.reply({ embeds: [embed] });
     } else if (interaction.customId === 'viewStreams') {
         let streamsText = streams.map((stream, index) => `Stream ${index + 1}: ${stream.messageText}`).join('\n');
@@ -50,7 +50,7 @@ client.on('interactionCreate', async (interaction) => {
         const embed = new MessageEmbed()
             .setColor('#0099ff')
             .setTitle('Введите номер потока')
-            .setDescription('Введите номер потока, который вы хотите удалить, в следующем формате:\n/deletestream streamNumber={streamNumber}');
+            .setDescription('Введите номер потока, который вы хотите удалить, в следующем формате:\n/deletestream&streamNumber={streamNumber}');
         await interaction.reply({ embeds: [embed] });
     }
 });
@@ -80,7 +80,7 @@ client.on('messageCreate', async (message) => {
     } else if (message.content.startsWith('/deletestream')) {
         const args = message.content.slice(14).split('&').reduce((acc, arg) => {
             const [key, value] = arg.split('={');
-            acc[key] = value.value.substring(0, value.length - 1);
+            acc[key] = value.substring(0, value.length - 1);
             return acc;
         }, {});
         if (args.streamNumber) {
