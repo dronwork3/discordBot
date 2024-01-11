@@ -75,7 +75,7 @@ client.on('messageCreate', async (message) => {
             stream.intervalId = startPosting(stream);
             streams.push(stream);
         } else {
-            message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/addstream token={token} channelId={channelId} messageText={messageText} intervalInMinutes={intervalInMinutes}');
+            message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/addstream&token={token}&channelId={channelId}&messageText={messageText}&intervalInMinutes={intervalInMinutes}');
         }
     } else if (message.content.startsWith('/deletestream')) {
         const args = message.content.slice(14).split('&').reduce((acc, arg) => {
@@ -94,7 +94,7 @@ client.on('messageCreate', async (message) => {
                 message.reply('Неверный номер потока');
             }
         } else {
-            message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/deletestream streamNumber={streamNumber}');
+            message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/deletestream&streamNumber={streamNumber}');
         }
     }
 });
