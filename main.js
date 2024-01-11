@@ -78,13 +78,14 @@ client.on('messageCreate', async (message) => {
             message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/addstream token={token} channelId={channelId} messageText={messageText} intervalInMinutes={intervalInMinutes}');
         }
     } else if (message.content.startsWith('/deletestream')) {
-        const args = message.content.slice(14).split(' ').reduce((acc, arg) => {
+        const args = message.content.slice(14).split('&').reduce((acc, arg) => {
             const [key, value] = arg.split('={');
             acc[key] = value.value.substring(0, value.length - 1);
             return acc;
         }, {});
         if (args.streamNumber) {
             let streamNumber = parseInt(args.streamNumber);
+            console.log(streamNumber);
             if (streamNumber > 0 && streamNumber <= streams.length) {
                 clearInterval(streams[streamNumber - 1].intervalId);
                 streams.splice(streamNumber - 1, 1);
