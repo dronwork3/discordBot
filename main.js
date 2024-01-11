@@ -1,7 +1,11 @@
-
 const { Client, MessageActionRow, MessageButton, MessageEmbed, Intents } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_TYPING] });
 const autosend = require("discord-autosender");
+require('dotenv').config();
+const express = require('express');
+
+const app = express();
+
 const botToken = process.env.botToken;
 let streams = [];
 
@@ -37,7 +41,7 @@ client.on('interactionCreate', async (interaction) => {
         const embed = new MessageEmbed()
             .setColor('#0099ff')
             .setTitle('Введите данные')
-            .setDescription('Введите данные в следующем формате:\n/addstream {token} {channelId} {messageText} {intervalInSeconds}');
+            .setDescription('Введите данные в следующем формате:\n/addstream token={token} channelId={channelId} messageText={messageText} intervalInMinutes={intervalInMinutes}');
         await interaction.reply({ embeds: [embed] });
     } else if (interaction.customId === 'viewStreams') {
         let streamsText = streams.map((stream, index) => `Stream ${index + 1}: ${stream.messageText}`).join('\n');
@@ -46,31 +50,41 @@ client.on('interactionCreate', async (interaction) => {
         const embed = new MessageEmbed()
             .setColor('#0099ff')
             .setTitle('Введите номер потока')
-            .setDescription('Введите номер потока, который вы хотите удалить, в следующем формате:\n/deletestream {streamNumber}');
+            .setDescription('Введите номер потока, который вы хотите удалить, в следующем формате:\n/deletestream streamNumber={streamNumber}');
         await interaction.reply({ embeds: [embed] });
     }
 });
 
 client.on('messageCreate', async (message) => {
     if (message.content.startsWith('/addstream')) {
-        const args = message.content.split('  ');
-        if (args.length === 5) {
+        const args = message.content.slice(11).split(' ').reduce((acc, arg) => {
+            const [key, value] = arg.split('={');
+            acc[key] = value.substring(0, value.length - 1);
+            return acc;
+        }, {});
+        console.log(args);
+        if (args.token && args.channelId && args.messageText && args.intervalInMinutes) {
             let stream = {
-                token: args[1],
-                channelId: args[2],
-                messageText: args[3],
-                intervalInSeconds: parseInt(args[4]),
+                token: args.token,
+                channelId: args.channelId,
+                messageText: args.messageText,
+                intervalInMinutes: parseInt(args.intervalInMinutes),
                 intervalId: null
             };
+            autosend.Post(stream.messageText, stream.channelId, stream.token)
             stream.intervalId = startPosting(stream);
             streams.push(stream);
         } else {
-            message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/addstream {token} {channelId} {messageText} {intervalInSeconds}');
+            message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/addstream token={token} channelId={channelId} messageText={messageText} intervalInMinutes={intervalInMinutes}');
         }
     } else if (message.content.startsWith('/deletestream')) {
-        const args = message.content.split(' ');
-        if (args.length === 2) {
-            let streamNumber = parseInt(args[1]);
+        const args = message.content.slice(14).split(' ').reduce((acc, arg) => {
+            const [key, value] = arg.split('=');
+            acc[key] = value;
+            return acc;
+        }, {});
+        if (args.streamNumber) {
+            let streamNumber = parseInt(args.streamNumber);
             if (streamNumber > 0 && streamNumber <= streams.length) {
                 clearInterval(streams[streamNumber - 1].intervalId);
                 streams.splice(streamNumber - 1, 1);
@@ -79,7 +93,7 @@ client.on('messageCreate', async (message) => {
                 message.reply('Неверный номер потока');
             }
         } else {
-            message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/deletestream {streamNumber}');
+            message.reply('Неверный формат данных. Пожалуйста, введите данные в следующем формате:\n/deletestream streamNumber={streamNumber}');
         }
     }
 });
@@ -87,7 +101,19 @@ client.on('messageCreate', async (message) => {
 function startPosting(stream) {
     return setInterval(() => {
         autosend.Post(stream.messageText, stream.channelId, stream.token)
-    }, stream.intervalInSeconds * 60 * 1000);
+        console.log(`Сообщение отправлено, ${new Date()}`)
+    }, stream.intervalInMinutes * 60 * 1000);
 }
 
 client.login(botToken);
+
+setInterval(() => {
+    console.log("Бот работает")
+}, 1000 * 60 * 5);
+
+app.get('/api', (req, res) => {
+    res.json({ message: 'Hello from server!' });
+});
+app.listen(3000, () => console.log('Server running on port 3000'));
+
+
