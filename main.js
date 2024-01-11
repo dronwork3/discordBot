@@ -57,7 +57,7 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('messageCreate', async (message) => {
     if (message.content.startsWith('/addstream')) {
-        const args = message.content.slice(11).split(' ').reduce((acc, arg) => {
+        const args = message.content.slice(11).split('&').reduce((acc, arg) => {
             const [key, value] = arg.split('={');
             acc[key] = value.substring(0, value.length - 1);
             return acc;
@@ -79,8 +79,8 @@ client.on('messageCreate', async (message) => {
         }
     } else if (message.content.startsWith('/deletestream')) {
         const args = message.content.slice(14).split(' ').reduce((acc, arg) => {
-            const [key, value] = arg.split('=');
-            acc[key] = value;
+            const [key, value] = arg.split('={');
+            acc[key] = value.value.substring(0, value.length - 1);
             return acc;
         }, {});
         if (args.streamNumber) {
