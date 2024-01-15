@@ -1,6 +1,12 @@
-const { Client, MessageActionRow, MessageButton, MessageEmbed, Intents, TextInputComponent, Modal,} = require('discord.js');
+const { Client, MessageActionRow, MessageButton, MessageEmbed, Intents, TextInputComponent, Modal} = require('discord.js');
 const axios = require('axios');
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_TYPING] });
+const client = new Client({intents:
+        [Intents.FLAGS.GUILDS,
+            Intents.FLAGS.MESSAGE_CONTENT,
+            Intents.FLAGS.GUILD_MESSAGES,
+            Intents.FLAGS.GUILD_MESSAGE_TYPING,
+            Intents.FLAGS.DIRECT_MESSAGES,
+            Intents.FLAGS.DIRECT_MESSAGE_TYPING], partials: ['CHANNEL', 'MESSAGE']});
 require('dotenv').config();
 const express = require('express');
 
@@ -80,6 +86,7 @@ client.on('interactionCreate', interaction => {
 });
 
 client.on('messageCreate', async (message) => {
+    console.log(message);
     if (message.content === '/start') {
         const row = new MessageActionRow()
             .addComponents(
