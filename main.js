@@ -1,3 +1,73 @@
+const pg = require('pg');
+require('dotenv').config();
+
+const databaseUrl = process.env.databaseUrl;
+
+const pgClient = new pg.Client(databaseUrl);
+
+pgClient.connect(err => {
+    if (err) {
+        return console.error("Unable to connect to database", err);
+    }
+});
+
+let streams = [];
+
+const loadStreamsFromDb = () => {
+    pgClient.query('Select * from streams', (err, result) => {
+        if (err) {
+            return console.error("Unable to fetch streams from DB", err);
+        }
+    
+        streams = result.rows;
+        console.info("Fetched  : " + result.rowCount + " streams from db");
+    });
+}
+
+const saveStreamToDb = async (stream) => {
+    try {
+        await pgClient.query(
+            `INSERT INTO public.streams(
+                name, token, channel_id, message, "interval")
+                VALUES (${stream.name}, ${stream.token}, ${stream.channelId}, ${stream.messageText}, ${stream.intervalInMinutes})`
+        );
+        console.log("Stream was saved to DB: " + JSON.stringify(stream));
+    } catch (err) {
+        console.err("Error while saving stream to DB " + JSON.stringify(stream));
+    } finally {
+        pgClient.end();
+    }
+}
+
+const updateStreamInDb = async (stream) => {
+    try {
+        await pgClient.query(
+            `UPDATE streams
+            SET name=${stream.name}, token=${stream.token}, channel_id=${stream.channelId}, message=${stream.messageText}, "interval"=${stream.intervalInMinutes}
+            WHERE streams.id=${stream.id};`
+        );
+        console.log("Stream was updated in DB: " + JSON.stringify(stream));
+    } catch (err) {
+        console.err("Error while updating stream in DB " + JSON.stringify(stream));
+    } finally {
+        pgClient.end();
+    }
+}
+
+const deleteStream = async (stream) => {
+    try {
+        await pgClient.query(
+            `Delete from streams WHERE streams.id=${stream.id};`
+        );
+        str
+        console.log("Stream was updated in DB: " + JSON.stringify(stream));
+    } catch (err) {
+        console.err("Error while updating stream in DB " + JSON.stringify(stream));
+    } finally {
+        pgClient.end();
+    }
+}
+
 const { Client, MessageActionRow, MessageButton, MessageEmbed, Intents, TextInputComponent, Modal} = require('discord.js');
 const axios = require('axios');
 const client = new Client({intents:
@@ -7,13 +77,12 @@ const client = new Client({intents:
             Intents.FLAGS.GUILD_MESSAGE_TYPING,
             Intents.FLAGS.DIRECT_MESSAGES,
             Intents.FLAGS.DIRECT_MESSAGE_TYPING], partials: ['CHANNEL', 'MESSAGE']});
-require('dotenv').config();
+
 const express = require('express');
 
 const app = express();
 
 const botToken = process.env.botToken;
-let streams = [];
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -74,10 +143,12 @@ client.on('interactionCreate', interaction => {
         const URL = `https://discord.com/api/v9/channels/${stream.channelId}/messages`
         const payload = { content: `${stream.messageText}` }
         axios.post(URL, payload, { headers: { 'authorization': stream.token } })
-            .then((response) => {
+            .then(async (response) => {
                 interaction.reply({content: 'Поток успешно создан'});
                 stream.intervalId = startPosting(stream);
+                await saveStreamToDb(stream);
                 streams.push(stream);
+
             })
             .catch((error) => {
                 interaction.reply({content: 'Ошибка создания, повторите попытку!'});
@@ -140,6 +211,8 @@ client.on('messageCreate', async (message) => {
             let streamNumber = parseInt(arg);
             if (streamNumber > 0 && streamNumber <= streams.length) {
                 clearInterval(streams[streamNumber - 1].intervalId);
+                const stream = streams.at(streamNumber);
+                await deleteStream(stream);
                 streams.splice(streamNumber - 1, 1);
                 message.reply(`Поток ${streamNumber} успешно удален`);
             } else {
@@ -165,15 +238,22 @@ function startPosting(stream) {
     }, stream.intervalInMinutes * 60 * 1000);
 }
 
-client.login(botToken);
-
-setInterval(() => {
-    console.log("Бот работает")
-}, 1000 * 60 * 5);
-
 app.get('/api', (req, res) => {
     res.json({ message: 'Hello from server!' });
 });
 app.listen(3000, () => console.log('Server running on port 3000'));
+
+const initApp = () => {
+    loadStreamsFromDb();
+    streams.forEach(stream => {
+        startPosting(stream);
+    });
+    client.login(botToken);
+    setInterval(() => {
+        console.log("Бот работает")
+    }, 1000 * 60 * 5);
+}
+
+initApp();
 
 
