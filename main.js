@@ -34,7 +34,18 @@ const loadStreamsFromDb = async () => {
             channelId: el.channel_id,
             messageText: el.message,
             intervalInMinutes: parseInt(el.interval),
+            userId: el.user_id
         }))
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
+
+const getUserByIdFromDb = async (userId) => {
+    try {
+        const result = await pgClient.query(`Select * from users where id = '${userId}'`);
+        return result.rows;
     }
     catch (e) {
         console.log(e);
@@ -43,17 +54,16 @@ const loadStreamsFromDb = async () => {
 
 const saveStreamToDb = async (stream) => {
     try {
-        await pgClient.query(
+        const response = await pgClient.query(
             `INSERT INTO public.streams(
-                name, token, channel_id, message, "interval")
-                VALUES ('${stream.name}', '${stream.token}', '${stream.channelId}', '${stream.messageText}', '${stream.intervalInMinutes}')`
+                name, token, channel_id, message, "interval", user_id)
+                VALUES ('${stream.name}', '${stream.token}', '${stream.channelId}', '${stream.messageText}', '${stream.intervalInMinutes}', '${stream.userId}') RETURNING *`
         );
+        stream.id = response.rows[0].id;
         console.log("Stream was saved to DB: " + JSON.stringify(stream));
     } catch (err) {
         console.error("Error while saving stream to DB " + JSON.stringify(stream));
         throw new Error(err);
-    } finally {
-        pgClient.end();
     }
 }
 
@@ -67,21 +77,17 @@ const updateStreamInDb = async (stream) => {
         console.log("Stream was updated in DB: " + JSON.stringify(stream));
     } catch (err) {
         console.error("Error while updating stream in DB " + JSON.stringify(stream));
-    } finally {
-        pgClient.end();
     }
 }
 
-const deleteStream = async (stream) => {
+const deleteStreamFromDb = async (stream) => {
     try {
         await pgClient.query(
             `Delete from streams WHERE streams.id=${stream.id};`
         );
-        console.log("Stream was updated in DB: " + JSON.stringify(stream));
+        console.log("Stream was deleted in DB: " + JSON.stringify(stream));
     } catch (err) {
-        console.error("Error while updating stream in DB " + JSON.stringify(stream));
-    } finally {
-        pgClient.end();
+        console.error("Error while deleting stream in DB " + JSON.stringify(stream));
     }
 }
 
@@ -90,7 +96,7 @@ client.on('ready', () => {
 });
 
 const onViewStreamsClick = async (interaction) => {
-    let streamsText = streams.map((stream, index) => `Поток ${index + 1}: ${stream.name}`).join('\n');
+    let streamsText = findStreamsByUserId(interaction.user.id).map((stream, index) => `Поток ${index + 1}: ${stream.name}`).join('\n');
     await interaction.reply({ content: streamsText || 'Нет активных потоков' });
 }
 
@@ -145,6 +151,9 @@ const onCreationModalClick = async (interaction) => {
 }
 
 client.on('interactionCreate', async (interaction) => {
+    if (!await isUserAuthorized(interaction.user.id)) {
+        return;
+    }
     if (!interaction.isButton()) return;
     switch(interaction.customId) {
         case 'viewStreams':
@@ -194,10 +203,8 @@ const handleDeleteCommand = async (message) => {
     if (arg) {
         let streamNumber = parseInt(arg);
         if (streamNumber > 0 && streamNumber <= streams.length) {
-            clearInterval(streams[streamNumber - 1].intervalId);
-            const stream = streams.at(streamNumber);
+            const stream = findStreamsByUserId(message.author.id)[streamNumber - 1];
             await deleteStream(stream);
-            streams.splice(streamNumber - 1, 1);
             message.reply(`Поток ${streamNumber} успешно удален`);
         } else {
             message.reply('Неверный номер потока');
@@ -220,7 +227,8 @@ const onFormSubmit = (interaction) => {
             channelId: channelId,
             messageText: messageText,
             intervalInMinutes: parseInt(intervalInMinutes),
-            intervalId: null
+            intervalId: null,
+            userId: interaction.user.id
         };
         const URL = `https://discord.com/api/v9/channels/${stream.channelId}/messages`
         const payload = { content: `${stream.messageText}` }
@@ -238,12 +246,20 @@ const onFormSubmit = (interaction) => {
     }
 }
 
-client.on('interactionCreate', interaction => {
+client.on('interactionCreate', async interaction => {
+    if (! await isUserAuthorized(interaction.user.id)) {
+        interaction.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png']});
+        return;
+    }
     if (!interaction.isModalSubmit()) return;
     onFormSubmit(interaction);
 });
 
 client.on('messageCreate', async (message) => {
+    if (! await isUserAuthorized(message.author.id)) {
+        message.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png'] });
+        return;
+    }
     if (message.content.startsWith('/deletestream')) {
         await handleDeleteCommand(message);
     }
@@ -281,6 +297,24 @@ const initApp = async () => {
     setInterval(() => {
         console.log("Бот работает")
     }, 1000 * 60 * 5);
+}
+
+const findStreamsByUserId = (userId) => {
+    return streams.filter(stream => stream.userId == userId);
+}
+
+const deleteStream = async (stream) => {
+    clearInterval(stream.intervalId);
+    await deleteStreamFromDb(stream);
+    streams = streams.filter(str => str.id != stream.id);
+}
+
+const isUserAuthorized = async (userId) => {
+    const usersFromDb = await getUserByIdFromDb(userId);
+    if (!(usersFromDb.length && usersFromDb.length > 0)) {
+        return false;
+    }
+    return true;
 }
 
 initApp();
