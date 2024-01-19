@@ -13,7 +13,7 @@ const client = new Client({intents:
 
 const app = express();
 
-const botToken = process.env["devBotToken"];
+const botToken = process.env.botToken;
 const databaseUrl = process.env.databaseUrl;
 
 const pgClient = new pg.Client(databaseUrl);
