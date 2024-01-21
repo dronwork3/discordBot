@@ -151,9 +151,9 @@ const onCreationModalClick = async (interaction) => {
 }
 
 client.on('interactionCreate', async (interaction) => {
-    if (!await isUserAuthorized(interaction.user.id)) {
-        return;
-    }
+    //if (!await isUserAuthorized(interaction.user.id)) {
+    //    return;
+    //}
     if (!interaction.isButton()) return;
     switch(interaction.customId) {
         case 'viewStreams':
@@ -247,19 +247,20 @@ const onFormSubmit = (interaction) => {
 }
 
 client.on('interactionCreate', async interaction => {
-    if (! await isUserAuthorized(interaction.user.id)) {
-        interaction.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png']});
-        return;
-    }
+    //if (! await isUserAuthorized(interaction.user.id)) {
+    //    interaction.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png']});
+    //    return;
+    //}
     if (!interaction.isModalSubmit()) return;
     onFormSubmit(interaction);
 });
 
 client.on('messageCreate', async (message) => {
-    if (! await isUserAuthorized(message.author.id)) {
-        message.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png'] });
-        return;
-    }
+    //if (! await isUserAuthorized(message.author.id)) {
+   //     message.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png'] });
+     //   return;
+    //}
+        console.log(message);
     if (message.content.startsWith('/deletestream')) {
         await handleDeleteCommand(message);
     }
