@@ -60,9 +60,9 @@ const saveStreamToDb = async (stream) => {
                 VALUES ('${stream.name}', '${stream.token}', '${stream.channelId}', '${stream.messageText}', '${stream.intervalInMinutes}', '${stream.userId}') RETURNING *`
         );
         stream.id = response.rows[0].id;
-        console.log("Stream was saved to DB: " + JSON.stringify(stream));
+        console.log("Stream was saved to DB: ");
     } catch (err) {
-        console.error("Error while saving stream to DB " + JSON.stringify(stream));
+        console.error("Error while saving stream to DB ");
         throw new Error(err);
     }
 }
