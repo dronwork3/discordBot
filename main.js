@@ -151,9 +151,9 @@ const onCreationModalClick = async (interaction) => {
 }
 
 client.on('interactionCreate', async (interaction) => {
-    //if (!await isUserAuthorized(interaction.user.id)) {
-    //    return;
-    //}
+    if (!await isUserAuthorized(interaction.user.id)) {
+       return;
+    }
     if (!interaction.isButton()) return;
     switch(interaction.customId) {
         case 'viewStreams':
@@ -204,6 +204,7 @@ const handleDeleteCommand = async (message) => {
         let streamNumber = parseInt(arg);
         if (streamNumber > 0 && streamNumber <= streams.length) {
             const stream = findStreamsByUserId(message.author.id)[streamNumber - 1];
+            console.log(stream);
             await deleteStream(stream);
             message.reply(`Поток ${streamNumber} успешно удален`);
         } else {
@@ -247,20 +248,20 @@ const onFormSubmit = (interaction) => {
 }
 
 client.on('interactionCreate', async interaction => {
-    //if (! await isUserAuthorized(interaction.user.id)) {
-    //    interaction.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png']});
-    //    return;
-    //}
+    if (! await isUserAuthorized(interaction.user.id)) {
+       interaction.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к dronwork.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png']});
+       return;
+    }
     if (!interaction.isModalSubmit()) return;
     onFormSubmit(interaction);
 });
 
 client.on('messageCreate', async (message) => {
-    //if (! await isUserAuthorized(message.author.id)) {
-   //     message.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png'] });
-     //   return;
-    //}
-        console.log(message);
+    console.log(message);
+    if (! await isUserAuthorized(message.author.id)) {
+       message.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png'] });
+       return;
+    }
     if (message.content.startsWith('/deletestream')) {
         await handleDeleteCommand(message);
     }
@@ -292,7 +293,7 @@ const initApp = async () => {
     streams = [];
     await loadStreamsFromDb();
     streams.forEach(stream => {
-        startPosting(stream);
+        stream.intervalId = startPosting(stream);
     });
     client.login(botToken);
     setInterval(() => {
@@ -312,6 +313,7 @@ const deleteStream = async (stream) => {
 
 const isUserAuthorized = async (userId) => {
     const usersFromDb = await getUserByIdFromDb(userId);
+    console.log(usersFromDb);
     if (!(usersFromDb.length && usersFromDb.length > 0)) {
         return false;
     }
