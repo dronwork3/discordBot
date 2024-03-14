@@ -259,7 +259,7 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async (message) => {
     console.log(message);
     if (! await isUserAuthorized(message.author.id)) {
-       message.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к @xandanya.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png'] });
+       message.reply({ content: 'Вы не имеете доступа к боту! По воспросам подписки обращайтесь к dronwork.', files: ['https://static.wikia.nocookie.net/gish/images/3/35/Gish_One.png'] });
        return;
     }
     if (message.content.startsWith('/deletestream')) {
