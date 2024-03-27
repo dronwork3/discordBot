@@ -109,7 +109,7 @@ const onDeleteStreamClick = async (interaction) => {
 }
 
 const onViewStreamInfoClick = async (interaction) => {
-    const description = streams.map((el, index) => `${index + 1}: Название - ${el.name}, Токен - ${el.token}, Айди канала - ${el.channelId}\n`)
+    const description = findStreamsByUserId(interaction.user.id).map((el, index) => `${index + 1}: Название - ${el.name}, Токен - ${el.token}, Айди канала - ${el.channelId}\n`)
     const embed = new MessageEmbed()
         .setColor('#0099ff')
         .setTitle('Все потоки')
